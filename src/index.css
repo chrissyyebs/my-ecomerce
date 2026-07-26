@@ -1,0 +1,96 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
+
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-bg: var(--color-bg);
+  --color-surface: var(--color-surface);
+  --color-surface-subtle: var(--color-surface-subtle);
+  --color-surface-card: var(--color-surface-card);
+  --color-on-surface: var(--color-on-surface);
+  --color-on-surface-muted: var(--color-on-surface-muted);
+  --color-primary: var(--color-primary);
+  --color-on-primary: var(--color-on-primary);
+  --color-primary-container: var(--color-primary-container);
+  --color-secondary: var(--color-secondary);
+  --color-tertiary: var(--color-tertiary);
+  --color-border: var(--color-border);
+  --color-border-strong: var(--color-border-strong);
+
+  --font-serif: "Playfair Display", Georgia, serif;
+  --font-sans: Inter, system-ui, sans-serif;
+
+  --shadow-luxury: 0px 10px 40px rgba(26, 26, 26, 0.04);
+  --shadow-luxury-dark: 0px 10px 40px rgba(0, 0, 0, 0.3);
+
+  --spacing-base: 8px;
+  --spacing-gutter: 24px;
+  --spacing-margin-desktop: 64px;
+  --spacing-margin-mobile: 20px;
+  --spacing-section-gap: 120px;
+  --spacing-container-max: 1280px;
+  --width-container-max: 1280px;
+}
+
+:root {
+  --color-bg: #FAF7F2;
+  --color-surface: #FFFFFF;
+  --color-surface-subtle: #F6F3F2;
+  --color-surface-card: #FFFFFF;
+  --color-on-surface: #1C1B1B;
+  --color-on-surface-muted: #51443A;
+  --color-primary: #81511F;
+  --color-on-primary: #FFFFFF;
+  --color-primary-container: #EAE1DA;
+  --color-secondary: #635D58;
+  --color-tertiary: #25627E;
+  --color-border: #E8E2D9;
+  --color-border-strong: #837468;
+}
+
+.dark {
+  --color-bg: #181717;
+  --color-surface: #212020;
+  --color-surface-subtle: #2A2929;
+  --color-surface-card: #242323;
+  --color-on-surface: #FAF7F2;
+  --color-on-surface-muted: #D5C3B5;
+  --color-primary: #FAB97E;
+  --color-on-primary: #2D1600;
+  --color-primary-container: #683C0B;
+  --color-secondary: #CDC5BF;
+  --color-tertiary: #96CEEE;
+  --color-border: #3A3735;
+  --color-border-strong: #685B50;
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-on-surface);
+  font-family: 'Inter', sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Playfair Display', serif;
+}
+
+/* Custom Scrollbar for Luxury Aesthetic */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-bg);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-border-strong);
+}
