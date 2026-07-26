@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sun, Moon, ShoppingBag, Search, Menu, User } from 'lucide-react';
+import { Sun, Moon, ShoppingBag, Search, Menu } from 'lucide-react';
 
 interface HeaderProps {
   darkMode: boolean;
