@@ -29,7 +29,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   const total = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden">
+    <div className="fixed inset-0 z-[75] overflow-hidden">
       {/* Backdrop */}
       <div 
         className="absolute inset-0 bg-black/40 backdrop-blur-xs transition-opacity"

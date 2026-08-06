@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Header } from './components/Header';
 import { ProductCard, type Product } from './components/ProductCard';
 import { QuickViewModal } from './components/QuickViewModal';
@@ -6,87 +6,249 @@ import { CartDrawer } from './components/CartDrawer';
 import { CheckoutModal } from './components/CheckoutModal';
 import { ToastContainer, type ToastData } from './components/Toast';
 import { Button } from './components/Button';
-import { 
-  Palette, Layers, Compass, ChevronLeft, ChevronRight, 
-  ArrowRight, Star, Heart
+import { CategoryModal } from './components/CategoryModal';
+import {
+  ArrowRight, Star, Package, Clock, ExternalLink, Plus
 } from 'lucide-react';
 
-const STITCH_HERO_BAG = "https://lh3.googleusercontent.com/aida-public/AB6AXuBzAQ20vvQbhgoaQOkl8HUKRLgkTIm86O1WVyfd68NXXDb0z2CGxyXTY2WBzlx_hHg7h-GM0sRhuvlE-s9EIDRwOcVIfcT49ZEzfhD7bqV1wG4kABQW7HieHuqnBfolOpXIq6AwAiJ-EMPXgl6tG6f3Dz9QAN3FcbbBFqCiH6GKc_84qgt39QjpP_OYpoHjh022WbxasVMuv-TlMgv6bxaKYebapiaMAVQBZqSx32Ww1Siwxt1Eytl0fzlCwWPaSjmo2cnZ1QZpkEs";
-const STITCH_HERO_FURNITURE = "https://lh3.googleusercontent.com/aida-public/AB6AXuC8Ddz93QQgfSVZs_X64wMHImc3tRjUXorI1UHYh8z_6glYrk5BIM3WO7a81vLlutIQemD0Q3QHdr275xWgs6o4862g6Zzz8FzFgLGni-O-o4ZpaJbc4ctL1WrlG1Ry6d1DTn9zk6PQf02hh201v3AynZB8yJtsHld2Tn9x275DnDgKkrIcRqnCXrNOW8nlmzpVJ1hKnkWz68HoL27BkvRLfCiIf6Qz7LwgKJfsUJHwupKmkrObSJPzUENTHHvXhO6r8WfiE2H13HQ";
-const STITCH_CAT_BAGS = "https://lh3.googleusercontent.com/aida-public/AB6AXuC8z4I9XTpgQ95q-PEfotlD_jHq1c8u9P0OvF4qsUN6pxCNt5U4Utbs9L2oeVfFrhhb3KEO-PtgRPYJuzTtdKiG0hAokh88Vvf0hFiuN5YuQIwnFwFYiHduKZIOIwAFjVJxFQtcot39ADDPVhifd3Sb3Mf8u0yAYF-CWsOdPShCs93iFh1SUnP8Jrd6Nz3KPu-d_-rzmYjbCAA6Dt9V1bGq49b6WjQkjJDxxKMX5O-Gigb7VzICy4yIGx8bpf11a0rrqhEs6hlNP0Y";
-const STITCH_CAT_FURNITURE = "https://lh3.googleusercontent.com/aida-public/AB6AXuAE4nmUNB1THKPrErgPjr8ZODRWKguZZRTROk6zvhBVTGX2D6-P-XWsHviwFrgITGWJPZHI4-Zhc0VZt1mRCcXrBat8vEWcuOYNIEgeP9b891jXVEQU_-gm4Bxp3vfXQTsMdPJADBLoXQA6D-YIEVnHuNSswyH0NAWLzVOU6NFgBcPEZWfkRxl0smzbFZyaedcmaAc6t2CHnLrCOWt36rISLRGJFI3VbXic9klGBPUkykWTH1RBltr_GKdBogrJVIEb9n2Lh2xPASk";
-const STITCH_ARTISAN = "https://lh3.googleusercontent.com/aida-public/AB6AXuANO4AeA4EFU36vBgI2rAlJL3oBR31jMpfXLKdy0q_miDf9Phpt1qemb-aauXmfYGiudf4EOXAkw7Nv0iIaJJNrhiHjlWyQDqz9FnRX1IdNQDU3ZlJMgGnECseV85jT4vPuoI0_wzhg23EbbhwABeqbIE4ekLwNyRFMI5jKZ_yAwfbunJMjA97fkCeJC1q6bV40H8ch8RNKTGoKUaktjVC8oWR5k9EcfCGx6071xtPLuUz-u2EEalh_GhySY-bc-3xMrx9GfIZLvjY";
-const STITCH_LOGO = "https://lh3.googleusercontent.com/aida-public/AB6AXuCXXcbzQ0R9jh4Mzxa1hzu1P6q86oIvgVFH_aoCHIZSz3FTMnfhQ1Xw1-vCN7LEvLD7Jji12nY7vruqGiwOqbHNiG7qF3W0wPxFCK3YNGJuSCm-IJbeB8-MwEhFnuv8iZylW9G3HtaTFeaK8bxpqJe2m0E8fLkoVAT4LP7UXxU3g1GmP-g1nuhb_7cddw_QQDVNHwC_uX6kNN_xXLTK2FaZdFXFbdTHGI7lv8upalbq0EM57sYcFGwkeWFi-qdt8MZ7PSCbLQTRYg4";
+const HERO_BAG = "https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=1200&q=80";
+const HERO_FURNITURE = "https://images.unsplash.com/photo-1538688525198-9b88f6f53126?auto=format&fit=crop&w=1200&q=80";
+const ARTISAN_IMAGE = "https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&w=1000&q=80";
 
-const PRODUCTS: Product[] = [
-  {
-    id: '1',
-    name: 'The Signature Tote',
-    category: 'Bags',
-    price: 450,
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuANoUoLN3Fu6jB7Ifj_x1e6bTrIor5bGCoGvDe9ioyZxyWEtVO5T65BzsumRxBQ1itrq0exuNNWxnL61UIyeZkA9ymYV4glVBp4WA0XlutrbP0W1S2suO93sdSEIhZp51E_r_5tIyWPDuq1D1XqLZekDToxL0kL2pEpav2uCfl9g-oiOj-r6UdiHdHPCNmx_Dz15YEshW7lSmUe776IaumcZvZuCRUIYXyjEl5hqm5ROmkrVu_jiO6hLqdkZ7vj6mSkWAD-gkd6WvU',
-    description: 'Heavyweight organic cotton duck canvas trimmed with vegetable-tanned Italian bridle leather. Designed for everyday utility with quiet elegance.',
-    materials: '18oz Organic Canvas, Tuscan Leather, Brass Hardware',
-    isNew: true,
-  },
-  {
-    id: '2',
-    name: 'Ash Wood Stool',
-    category: 'Furniture',
-    price: 320,
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuB4d0sOenKFy9_-xUqrhaFbj8yCGueyaa7BElzu7BPsMCUue4D_pweq_B6vgrgSz7vS2c8EtzvEM8xRmRHX6iJfwUnp5w5LmrgOdTH-mXRQjy0B_NHZd7IoPP0dpRfcXJY4nqDz-tcZNf2y3xLOfaxaWOcV7C9ErPdhUpZF1seA--sXDidoacPVkJDLA95CEWd0lH8oGU01HV7McjKe-NZZ5-T-4F7NOwm-a_4WlrVoMYJAusYKOB78HtCMofwrIV1X-Q7cJLlzJZI',
-    description: 'A sculptural handcrafted wooden stool made from light ash wood with exposed mortise and tenon joinery.',
-    materials: 'Solid Light Ash Wood, Natural Wax Finish',
-    isNew: true,
-  },
-  {
-    id: '3',
-    name: 'Tech Sleeve II',
-    category: 'Bags',
-    price: 180,
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAoOR2RUPNzXiUoPWGs_4pMGz-9VyaKL8kh0c10YV_BNQ4o68zc8WJMuSHWh1D0C4cqTZwkR4xicu6RDDnI1boI5qioXppHsD88Exch35JPIc7TUmMRs4JwYzZeto5Kh2L81Oz_7lgQYlRpbrV8AxkZFwV3R1UcaaK5EfPSEmqLqI6XGXBT30sqWsiS7PVXOdC6Vkk4E8goQnI-0eRkaOYq6kFQUUySEpC2Vped2-sX-6z6SGxC9xQaaIS4mELBQedrB-TdsRuRfhk',
-    description: 'A luxury leather laptop sleeve in a deep olive green tone designed for 14"-16" devices.',
-    materials: 'Full-Grain Bovine Leather, Microfiber Interior',
-  },
-  {
-    id: '4',
-    name: 'Serene Floor Lamp',
-    category: 'Furniture',
-    price: 610,
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuA8nAq8FtFjXawcdd_prutLyleVJe4QR73tmO4wW1ru5IclCL3PoGnouAI-PUnJwUmZokKwCGyh4MB8RiGJ2N_U8bPliPdU_-UsAYLtY3kKVmBqQc-4kHHJZKgB2v9hbQMtbo1M1jDjJ7O7GVQTkQ-JWCW5GZsaBVI0EoijJN6JLzsL0g9ACpVMdQK5E9qr0EA_Qc7DRxM9FgH3o-bWaI-Ep70wt6pk4h2zBkDpcMxRnet8y9TkkN-xz5GOJCkWc-eLVRpaJyi7Qs8',
-    description: 'A minimalist floor lamp with a slender matte black stem and warm ambient LED glow.',
-    materials: 'Anodized Aluminium, Frosted Glass Diffuser',
-    isNew: true,
-  },
-  {
-    id: '5',
-    name: 'Atelier Canvas Carry-All',
-    category: 'Bags',
-    price: 240,
-    image: 'https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=800&q=80',
-    description: 'Heavyweight organic cotton duck canvas trimmed with vegetable-tanned Italian bridle leather.',
-    materials: '18oz Organic Canvas, Tuscan Leather',
-  },
-  {
-    id: '6',
-    name: 'Architectural Oak Bench',
-    category: 'Furniture',
-    price: 850,
-    image: 'https://images.unsplash.com/photo-1538688525198-9b88f6f53126?auto=format&fit=crop&w=800&q=80',
-    description: 'Minimalist entry bench crafted from solid European white oak featuring exposed joinery.',
-    materials: 'Solid European White Oak',
-  },
-];
+// ─── Default product catalog (empty initial state — no static mock images) ──────
+const DEFAULT_PRODUCTS: Product[] = [];
+const DEFAULT_CATEGORY_NAMES = ['Bags', 'Furniture'];
+
+// Read admin-managed products from localStorage (filtering out old mock IDs 1..6)
+function loadProductsFromStorage(): Product[] {
+  try {
+    const raw = localStorage.getItem('ttl_admin_products');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        const filtered = parsed.filter(
+          (p: any) => p.is_active !== false && !['1', '2', '3', '4', '5', '6'].includes(String(p.id))
+        );
+        return filtered.map((p: any) => ({
+          id: p.id,
+          name: p.name,
+          category: (typeof p.category === 'string' ? p.category : p.category?.name) || p.categoryName || 'General',
+          price: p.price,
+          image: p.image || p.images?.[0]?.public_url || '',
+          description: p.description || '',
+          materials: Array.isArray(p.materials) ? p.materials.join(', ') : p.materials || '',
+          isNew: p.isNew || false,
+        }));
+      }
+    }
+  } catch { /* ignore */ }
+  return DEFAULT_PRODUCTS;
+}
+
+// Read admin-managed categories from localStorage
+function loadCategoriesFromStorage(): string[] {
+  try {
+    const raw = localStorage.getItem('ttl_admin_categories');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed.map((c: any) => c.name as string);
+      }
+    }
+  } catch { /* ignore */ }
+  return DEFAULT_CATEGORY_NAMES;
+}
+
+import { AdminPortal } from './components/AdminPortal';
+import { ClientAuthModal, type ClientUser, type ClientOrder } from './components/ClientAuthModal';
+import { SupportChatWidget } from './components/SupportChatWidget';
+import { NotFoundPage } from './components/NotFoundPage';
 
 export function App() {
+  // ── Dynamic data from DB / Admin portal ─────────────────────────────────
+  const [storefrontProducts, setStorefrontProducts] = useState<Product[]>(loadProductsFromStorage);
+  const [adminCategoryNames, setAdminCategoryNames] = useState<string[]>(loadCategoriesFromStorage);
+
+  const refreshFromStorage = useCallback(() => {
+    setStorefrontProducts(loadProductsFromStorage());
+    setAdminCategoryNames(loadCategoriesFromStorage());
+  }, []);
+
+  const fetchLiveProductsAndCategories = useCallback(async () => {
+    try {
+      const [pRes, cRes] = await Promise.all([
+        fetch('/api/products'),
+        fetch('/api/categories'),
+      ]);
+
+      if (pRes.ok) {
+        const pData = await pRes.json();
+        if (Array.isArray(pData.products)) {
+          const mapped: Product[] = pData.products.map((p: any) => ({
+            id: p.id,
+            name: p.name,
+            category: p.categoryName || p.category?.name || 'Bags',
+            price: p.price,
+            image: p.image || p.images?.[0]?.public_url || '',
+            description: p.description || '',
+            materials: Array.isArray(p.materials) ? p.materials.join(', ') : p.materials || '',
+            isNew: false,
+          }));
+          setStorefrontProducts(mapped);
+          // Store with categoryName preserved so loadProductsFromStorage can read it
+          const toCache = pData.products.map((p: any) => ({
+            ...p,
+            categoryName: p.categoryName || p.category?.name || 'Bags',
+          }));
+          try { localStorage.setItem('ttl_admin_products', JSON.stringify(toCache)); } catch {}
+        }
+      }
+
+      if (cRes.ok) {
+        const cData = await cRes.json();
+        if (Array.isArray(cData.categories) && cData.categories.length > 0) {
+          const catNames = cData.categories.map((c: any) => c.name);
+          setAdminCategoryNames(catNames);
+          try { localStorage.setItem('ttl_admin_categories', JSON.stringify(cData.categories)); } catch {}
+        }
+      }
+    } catch {
+      refreshFromStorage();
+    }
+  }, [refreshFromStorage]);
+
+  useEffect(() => {
+    fetchLiveProductsAndCategories();
+
+    const handleCustomUpdate = () => fetchLiveProductsAndCategories();
+    window.addEventListener('storage', refreshFromStorage);
+    window.addEventListener('ttl_catalog_updated', handleCustomUpdate);
+    const interval = setInterval(refreshFromStorage, 3000);
+
+    return () => {
+      window.removeEventListener('storage', refreshFromStorage);
+      window.removeEventListener('ttl_catalog_updated', handleCustomUpdate);
+      clearInterval(interval);
+    };
+  }, [fetchLiveProductsAndCategories, refreshFromStorage]);
+
+  // ── rest of App state ───────────────────────────────────────────────────────
   const [darkMode, setDarkMode] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const [isClientAuthOpen, setIsClientAuthOpen] = useState(false);
+  const [clientAuthTab, setClientAuthTab] = useState<'signin' | 'signup' | 'verify_otp' | 'forgot_password' | 'reset_password' | 'account' | 'orders'>('signin');
+
+  // ── 30-Second Auto-Rotate Carousel State ─────────────────────────────
+  const [carouselCategory, setCarouselCategory] = useState<string>('All');
+  const [carouselTimeLeft, setCarouselTimeLeft] = useState<number>(30);
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+  const [modalCategory, setModalCategory] = useState<string>('All');
+
+  // Auto-rotate category carousel every 30 seconds
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCarouselTimeLeft((prev) => {
+        if (prev <= 1) {
+          setCarouselCategory((current) => {
+            const allCats = ['All', ...adminCategoryNames];
+            const currentIndex = allCats.findIndex(
+              (c) => c.toLowerCase() === current.toLowerCase()
+            );
+            const nextIndex = (currentIndex + 1) % allCats.length;
+            return allCats[nextIndex];
+          });
+          return 30;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [adminCategoryNames]);
+  
+  const [currentUser, setCurrentUser] = useState<ClientUser | null>(() => {
+    try {
+      const saved = localStorage.getItem('ttl_client_user');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  const [userOrders, setUserOrders] = useState<ClientOrder[]>(() => {
+    try {
+      const saved = localStorage.getItem('ttl_client_orders');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
   const [cart, setCart] = useState<{ id: string; name: string; category: string; price: number; image: string; description: string; materials: string; quantity: number }[]>([]);
   const [toasts, setToasts] = useState<ToastData[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  const handleLoginUser = (user: ClientUser) => {
+    setCurrentUser(user);
+    try {
+      localStorage.setItem('ttl_client_user', JSON.stringify(user));
+    } catch (e) {
+      console.warn('Failed saving client user session:', e);
+    }
+  };
+
+  const handleLogoutUser = () => {
+    setCurrentUser(null);
+    try {
+      localStorage.removeItem('ttl_client_user');
+    } catch (e) {
+      console.warn('Failed clearing client user session:', e);
+    }
+  };
+
+  const handleOrderCreated = (order: ClientOrder) => {
+    setUserOrders(prev => {
+      const next = [order, ...prev];
+      try {
+        localStorage.setItem('ttl_client_orders', JSON.stringify(next));
+      } catch (e) {
+        console.warn('Failed saving client orders:', e);
+      }
+      return next;
+    });
+  };
+
+  // Route tracking state
+  const [currentPathState, setCurrentPathState] = useState(window.location.pathname);
+
+  useEffect(() => {
+    const handlePopState = () => setCurrentPathState(window.location.pathname);
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  // Check if current URL path matches the secret admin slug or unknown path
+  const currentPath = currentPathState.replace(/^\/+|\/+$/g, '');
+  const adminSlug = (import.meta.env.VITE_ADMIN_SLUG || 's4cogknoehrs').replace(/^\/+|\/+$/g, '');
+  const isAdminRoute = currentPath === adminSlug || currentPath === 's4cogknoehrs';
+
+  if (isAdminRoute) {
+    return <AdminPortal />;
+  }
+
+  if (currentPath !== '') {
+    return (
+      <NotFoundPage
+        onGoHome={() => {
+          window.history.pushState({}, '', '/');
+          setCurrentPathState('/');
+        }}
+      />
+    );
+  }
 
   // Apply dark mode class to html element
   useEffect(() => {
@@ -97,13 +259,44 @@ export function App() {
     }
   }, [darkMode]);
 
-  const categories = ['All', 'Bags', 'Furniture'];
+  // Build category filter tabs from admin-set categories
+  const categories = ['All', ...adminCategoryNames];
 
-  const filteredProducts = selectedCategory === 'All' 
-    ? PRODUCTS 
-    : PRODUCTS.filter(p => p.category === selectedCategory);
+  const filteredProducts = selectedCategory === 'All'
+    ? storefrontProducts
+    : storefrontProducts.filter((p) => {
+        if (!p.category) return false;
+        const prodCat = (
+          typeof p.category === 'string'
+            ? p.category
+            : (p.category as any)?.name || (p as any).categoryName || ''
+        ).trim().toLowerCase();
+
+        const selected = selectedCategory.trim().toLowerCase();
+        return prodCat === selected || prodCat.includes(selected) || selected.includes(prodCat);
+      });
+
+  const carouselProducts = carouselCategory === 'All'
+    ? storefrontProducts
+    : storefrontProducts.filter((p) => {
+        if (!p.category) return false;
+        const prodCat = (
+          typeof p.category === 'string'
+            ? p.category
+            : (p.category as any)?.name || (p as any).categoryName || ''
+        ).trim().toLowerCase();
+
+        const selected = carouselCategory.trim().toLowerCase();
+        return prodCat === selected || prodCat.includes(selected) || selected.includes(prodCat);
+      });
 
   const handleAddToCart = (product: Product) => {
+    // Gate: require sign-in before adding to cart
+    if (!currentUser) {
+      setIsClientAuthOpen(true);
+      return;
+    }
+
     setCart(prev => {
       const existing = prev.find(item => item.id === product.id);
       if (existing) {
@@ -121,9 +314,9 @@ export function App() {
     setToasts(prev => [...prev, newToast]);
   };
 
-  const handleDismissToast = (id: number) => {
+  const handleDismissToast = useCallback((id: number) => {
     setToasts(prev => prev.filter(t => t.id !== id));
-  };
+  }, []);
 
   const handleRemoveFromCart = (id: string) => {
     setCart(prev => prev.filter(item => item.id !== id));
@@ -131,13 +324,6 @@ export function App() {
 
   const handleUpdateQuantity = (id: string, qty: number) => {
     setCart(prev => prev.map(item => item.id === id ? { ...item, quantity: qty } : item));
-  };
-
-  const scrollCarousel = (direction: 'left' | 'right') => {
-    if (scrollRef.current) {
-      const amount = direction === 'left' ? -260 : 260;
-      scrollRef.current.scrollBy({ left: amount, behavior: 'smooth' });
-    }
   };
 
   return (
@@ -152,18 +338,74 @@ export function App() {
         onOpenCart={() => setIsCartOpen(true)}
         selectedCategory={selectedCategory}
         setSelectedCategory={setSelectedCategory}
+        currentUser={currentUser}
+        onOpenClientAuth={() => {
+          setClientAuthTab(currentUser ? 'account' : 'signin');
+          setIsClientAuthOpen(true);
+        }}
+        onOpenOrders={() => {
+          setClientAuthTab(currentUser ? 'orders' : 'signin');
+          setIsClientAuthOpen(true);
+        }}
+        products={storefrontProducts}
+        onAddToCart={handleAddToCart}
+        onQuickView={setQuickViewProduct}
       />
 
       {/* Hero Section: Asymmetrical Editorial Layout */}
-      <section className="relative min-h-[85vh] flex flex-col justify-center bg-[#FAF7F2] dark:bg-surface overflow-hidden py-16 px-6 md:px-16 border-b border-border/40">
-        <div className="max-w-container-max w-full mx-auto grid grid-cols-12 gap-8 items-center">
-          
-          {/* Left: Curated Carriers (Dominant Side) */}
+      <section className="relative bg-[#FAF7F2] dark:bg-surface overflow-hidden py-8 sm:py-16 px-4 sm:px-8 md:px-16 border-b border-border/40">
+        
+        {/* Mobile Hero (Screen < md) */}
+        <div className="md:hidden relative rounded-2xl overflow-hidden shadow-luxury border border-border/60 aspect-[4/5] flex flex-col justify-end p-6 text-white bg-black">
+          <img
+            src={HERO_BAG}
+            alt="Curated Leather Tote"
+            className="absolute inset-0 w-full h-full object-cover opacity-75"
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=800&q=80";
+            }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent"></div>
+
+          <div className="relative z-10 space-y-3">
+            <span className="inline-block px-3 py-1 bg-[#81511F] text-white text-[10px] uppercase font-bold tracking-widest rounded-full shadow-md">
+              Slow Living Archive
+            </span>
+            <h1 className="font-serif text-3xl font-medium leading-tight text-white">
+              Curated <br />
+              <span className="italic font-light text-[#FAB97E]">Carriers & Objects.</span>
+            </h1>
+            <p className="text-xs text-stone-300 font-sans leading-relaxed line-clamp-2">
+              Heavyweight organic duck canvas trimmed with vegetable-tanned Italian bridle leather.
+            </p>
+            <div className="pt-2 flex items-center gap-2">
+              <button
+                onClick={() => document.getElementById('catalog')?.scrollIntoView({ behavior: 'smooth' })}
+                className="flex-1 bg-[#81511F] text-white py-3 rounded-xl text-xs font-semibold uppercase tracking-wider text-center shadow-lg active:scale-95 transition-transform"
+              >
+                Shop Catalog
+              </button>
+              <button
+                onClick={() => {
+                  setModalCategory('All');
+                  setIsCategoryModalOpen(true);
+                }}
+                className="px-4 py-3 bg-white/20 backdrop-blur-md border border-white/30 text-white rounded-xl text-xs font-semibold uppercase tracking-wider text-center"
+              >
+                View All
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Desktop/Tablet Hero (Screen >= md) */}
+        <div className="hidden md:grid max-w-container-max w-full mx-auto grid-cols-12 gap-8 items-center">
+          {/* Left: Curated Carriers */}
           <div className="col-span-12 md:col-span-7 relative z-20">
             <div className="relative group">
               <div className="aspect-[4/5] md:aspect-[3/4] overflow-hidden rounded-2xl shadow-luxury relative border border-border/60">
                 <img
-                  src={STITCH_HERO_BAG}
+                  src={HERO_BAG}
                   alt="Curated Leather Tote"
                   className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
                   onError={(e) => {
@@ -173,7 +415,7 @@ export function App() {
               </div>
 
               {/* Floating Text Overlay */}
-              <div className="absolute -bottom-8 -right-4 md:-right-16 md:bottom-16 z-30 max-w-md bg-surface/80 backdrop-blur-md p-6 rounded-xl border border-border/80 shadow-luxury">
+              <div className="absolute -bottom-8 -right-4 md:-right-16 md:bottom-16 z-30 max-w-md bg-surface/90 backdrop-blur-md p-6 rounded-xl border border-border/80 shadow-luxury">
                 <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl font-normal leading-none tracking-tight text-on-surface">
                   <span>Curated</span> <br />
                   <span className="text-primary italic font-light">Carriers.</span>
@@ -189,19 +431,19 @@ export function App() {
                     }}
                     className="bg-primary text-on-primary px-8 py-3.5 rounded-full text-xs font-semibold uppercase tracking-widest hover:opacity-90 transition-all shadow-luxury"
                   >
-                    Shop Bags
+                    Shop Collection
                   </button>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Right: Modern Living (Secondary Side) */}
-          <div className="col-span-12 md:col-span-4 md:col-start-9 mt-16 md:mt-0 relative z-10">
+          {/* Right: Modern Living */}
+          <div className="col-span-12 md:col-span-4 md:col-start-9 relative z-10">
             <div className="group">
               <div className="aspect-square md:aspect-[4/5] overflow-hidden rounded-xl shadow-luxury border-4 border-surface relative mb-6">
                 <img
-                  src={STITCH_HERO_FURNITURE}
+                  src={HERO_FURNITURE}
                   alt="Modern Living Armchair"
                   className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
                   onError={(e) => {
@@ -219,157 +461,217 @@ export function App() {
                 </p>
                 <button
                   onClick={() => {
-                    setSelectedCategory('Furniture');
-                    document.getElementById('catalog')?.scrollIntoView({ behavior: 'smooth' });
+                    setModalCategory('All');
+                    setIsCategoryModalOpen(true);
                   }}
                   className="inline-block border border-on-surface text-on-surface px-6 py-2.5 rounded-full text-[10px] font-semibold tracking-widest uppercase hover:bg-on-surface hover:text-bg transition-all"
                 >
-                  Shop Furniture
+                  Explore All Categories
                 </button>
               </div>
             </div>
           </div>
-
         </div>
       </section>
 
-      {/* Category Feature Section */}
-      <section className="py-20 px-6 max-w-container-max mx-auto border-b border-border/50" id="categories">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* Bags Feature Card */}
-          <div 
-            onClick={() => {
-              setSelectedCategory('Bags');
-              document.getElementById('catalog')?.scrollIntoView({ behavior: 'smooth' });
-            }}
-            className="group cursor-pointer"
-          >
-            <div className="relative overflow-hidden rounded-xl aspect-[4/5] border border-border shadow-luxury">
-              <img
-                src={STITCH_CAT_BAGS}
-                alt="Bags for the Journey"
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1590874103328-eac38a683ce7?auto=format&fit=crop&w=800&q=80";
-                }}
-              />
-              <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-all"></div>
-            </div>
-            <div className="mt-6 text-center">
-              <h3 className="font-serif text-2xl font-medium text-on-surface">Bags for the Journey</h3>
-              <span className="text-xs uppercase tracking-widest text-primary border-b border-primary/40 pb-0.5 mt-1 inline-block">
-                Discover Collection
-              </span>
-            </div>
-          </div>
+      {/* Dynamic Category Feature Section */}
+      {adminCategoryNames.length > 0 && (
+      <section className="py-16 sm:py-20 px-4 sm:px-6 max-w-container-max mx-auto border-b border-border/50" id="categories">
+        {/* Section header */}
+        <div className="text-center mb-10 sm:mb-14">
+          <span className="text-[10px] sm:text-xs uppercase tracking-[0.25em] text-primary font-bold">
+            Browse By Category
+          </span>
+          <h2 className="font-serif text-2xl sm:text-4xl font-medium text-on-surface mt-2">
+            Shop Our Collections
+          </h2>
+        </div>
 
-          {/* Furniture Feature Card */}
-          <div 
-            onClick={() => {
-              setSelectedCategory('Furniture');
-              document.getElementById('catalog')?.scrollIntoView({ behavior: 'smooth' });
-            }}
-            className="group cursor-pointer"
-          >
-            <div className="relative overflow-hidden rounded-xl aspect-[4/5] border border-border shadow-luxury">
-              <img
-                src={STITCH_CAT_FURNITURE}
-                alt="Objects of Purpose"
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1584589167171-541ce45f1eea?auto=format&fit=crop&w=800&q=80";
+        <div className={`grid gap-4 sm:gap-6 ${
+          adminCategoryNames.length === 1
+            ? 'grid-cols-1 max-w-2xl mx-auto'
+            : adminCategoryNames.length === 2
+              ? 'grid-cols-1 sm:grid-cols-2'
+              : adminCategoryNames.length === 3
+                ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
+                : 'grid-cols-2 lg:grid-cols-4'
+        }`}>
+          {adminCategoryNames.map((catName) => {
+            // Find the first product with an image in this category to use as cover
+            const catProducts = storefrontProducts.filter((p) => {
+              const prodCat = (
+                typeof p.category === 'string'
+                  ? p.category
+                  : (p.category as any)?.name || ''
+              ).trim().toLowerCase();
+              return prodCat === catName.trim().toLowerCase();
+            });
+            const coverImage = catProducts.find((p) => p.image)?.image || '';
+            const productCount = catProducts.length;
+
+            return (
+              <div
+                key={`cat-feature-${catName}`}
+                onClick={() => {
+                  setModalCategory(catName);
+                  setIsCategoryModalOpen(true);
                 }}
-              />
-              <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-all"></div>
-            </div>
-            <div className="mt-6 text-center">
-              <h3 className="font-serif text-2xl font-medium text-on-surface">Objects of Purpose</h3>
-              <span className="text-xs uppercase tracking-widest text-primary border-b border-primary/40 pb-0.5 mt-1 inline-block">
-                Explore Furniture
-              </span>
-            </div>
-          </div>
+                className="group cursor-pointer relative"
+              >
+                <div className={`relative overflow-hidden rounded-2xl border border-border/60 shadow-luxury ${
+                  adminCategoryNames.length <= 2 ? 'aspect-[16/9] sm:aspect-[3/2]' : 'aspect-[4/3] sm:aspect-[16/10]'
+                }`}>
+                  {coverImage ? (
+                    <img
+                      src={coverImage}
+                      alt={catName}
+                      className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-primary/10 via-surface-subtle to-primary/5 flex items-center justify-center">
+                      <span className="font-serif text-4xl text-primary/20 font-bold">{catName.charAt(0)}</span>
+                    </div>
+                  )}
+
+                  {/* Gradient overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent group-hover:from-black/60 group-hover:via-black/10 transition-all duration-500"></div>
+
+                  {/* Text overlay on image */}
+                  <div className="absolute inset-x-0 bottom-0 p-4 sm:p-5 flex flex-col items-start">
+                    {productCount > 0 && (
+                      <span className="text-[9px] sm:text-[10px] uppercase tracking-[0.2em] text-white/70 font-semibold mb-1">
+                        {productCount} {productCount === 1 ? 'Item' : 'Items'}
+                      </span>
+                    )}
+                    <h3 className="font-serif text-lg sm:text-xl lg:text-2xl font-medium text-white leading-tight">
+                      {catName}
+                    </h3>
+                    <span className="mt-2 inline-flex items-center gap-1.5 text-[10px] sm:text-xs uppercase tracking-widest text-white/90 font-semibold border-b border-white/40 pb-0.5 group-hover:border-white group-hover:text-white transition-all">
+                      Explore Collection <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+                    </span>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </section>
+      )}
 
-      {/* New Arrivals: Horizontal Scroll Carousel */}
+      {/* New Arrivals: 30-Second Auto-Rotating Category Carousel */}
       <section className="bg-surface-subtle py-16 sm:py-20 border-b border-border/60 overflow-hidden" id="new-arrivals">
-        <div className="px-4 sm:px-6 max-w-container-max mx-auto mb-8 sm:mb-10 flex justify-between items-end">
+        <div className="px-4 sm:px-6 max-w-container-max mx-auto mb-6 sm:mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
-            <span className="text-[10px] sm:text-xs uppercase tracking-[0.2em] text-on-surface-muted font-semibold">
-              Latest Additions
-            </span>
-            <h2 className="font-serif text-2xl sm:text-3xl font-medium text-on-surface mt-1 sm:mt-2">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-[10px] sm:text-xs uppercase tracking-[0.2em] text-primary font-bold">
+                Latest Additions
+              </span>
+              <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-semibold flex items-center gap-1">
+                <Clock className="w-3 h-3 animate-spin" /> Next in {carouselTimeLeft}s
+              </span>
+            </div>
+
+            <h2 className="font-serif text-2xl sm:text-3xl font-medium text-on-surface">
               The New Essentials
             </h2>
+
+            {/* 30s Progress Bar */}
+            <div className="w-48 h-1 bg-border/60 rounded-full mt-2 overflow-hidden">
+              <div
+                className="h-full bg-primary transition-all duration-1000 ease-linear"
+                style={{ width: `${(carouselTimeLeft / 30) * 100}%` }}
+              ></div>
+            </div>
           </div>
-          <div className="flex space-x-2 sm:space-x-3">
+
+          {/* Category Tabs for Carousel */}
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
+            {['All', ...adminCategoryNames].map((cat) => (
+              <button
+                key={`carousel-tab-${cat}`}
+                onClick={() => {
+                  setCarouselCategory(cat);
+                  setCarouselTimeLeft(30);
+                }}
+                className={`px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wider rounded-lg transition-all flex-shrink-0 ${
+                  carouselCategory.toLowerCase() === cat.toLowerCase()
+                    ? 'bg-primary text-on-primary shadow-luxury'
+                    : 'bg-surface text-on-surface-muted hover:text-on-surface'
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
+
             <button
-              onClick={() => scrollCarousel('left')}
-              className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border border-border flex items-center justify-center bg-surface hover:bg-primary hover:text-on-primary transition-all shadow-sm"
-              aria-label="Scroll left"
+              onClick={() => {
+                setModalCategory(carouselCategory);
+                setIsCategoryModalOpen(true);
+              }}
+              className="px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wider rounded-lg border border-primary text-primary hover:bg-primary hover:text-on-primary transition-colors flex items-center gap-1 flex-shrink-0 ml-2"
             >
-              <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
-            </button>
-            <button
-              onClick={() => scrollCarousel('right')}
-              className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border border-border flex items-center justify-center bg-surface hover:bg-primary hover:text-on-primary transition-all shadow-sm"
-              aria-label="Scroll right"
-            >
-              <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
+              View All <ExternalLink className="w-3 h-3" />
             </button>
           </div>
         </div>
 
+        {/* Carousel Products */}
         <div
           ref={scrollRef}
-          className="flex overflow-x-auto no-scrollbar space-x-4 sm:space-x-6 px-4 sm:px-6 max-w-container-max mx-auto pb-4 scroll-smooth"
+          className="flex overflow-x-auto no-scrollbar space-x-3 sm:space-x-5 px-4 sm:px-6 max-w-container-max mx-auto pb-4 scroll-smooth"
         >
-          {PRODUCTS.map((product) => (
-            <div
-              key={`carousel-${product.id}`}
-              className="min-w-[200px] w-[200px] sm:min-w-[300px] sm:w-[300px] group flex-shrink-0 cursor-pointer"
-              onClick={() => setQuickViewProduct(product)}
-            >
-              <div className="relative aspect-square rounded-xl overflow-hidden mb-3 sm:mb-4 bg-surface border border-border shadow-luxury">
-                <img
-                  src={product.image}
-                  alt={product.name}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                />
-                <span className="absolute top-2.5 left-2.5 sm:top-3 sm:left-3 bg-surface/90 backdrop-blur-md px-2 py-0.5 sm:px-2.5 sm:py-1 rounded text-[9px] sm:text-[10px] uppercase font-semibold tracking-wider text-on-surface border border-border/50">
-                  {product.category}
-                </span>
-              </div>
-              <div className="flex justify-between items-start">
-                <div>
-                  <h4 className="font-serif text-sm sm:text-lg font-medium text-on-surface group-hover:text-primary transition-colors line-clamp-1">
-                    {product.name}
-                  </h4>
-                  <p className="text-xs font-semibold text-primary mt-0.5 sm:mt-1">${product.price}</p>
-                </div>
-                <button 
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleAddToCart(product);
-                  }}
-                  className="p-1.5 sm:p-2 text-on-surface-muted hover:text-primary transition-colors"
-                >
-                  <Heart className="w-4 h-4" />
-                </button>
-              </div>
+          {carouselProducts.length === 0 ? (
+            <div className="w-full py-12 text-center text-xs text-on-surface-muted bg-surface/50 rounded-xl border border-border/50">
+              No products found in "{carouselCategory}". Switching to next category...
             </div>
-          ))}
+          ) : (
+            carouselProducts.map((product) => (
+              <div
+                key={`carousel-${product.id}`}
+                className="min-w-[170px] w-[170px] sm:min-w-[240px] sm:w-[240px] group flex-shrink-0 cursor-pointer bg-surface p-2.5 rounded-xl border border-border/60 shadow-sm hover:shadow-luxury transition-all"
+                onClick={() => setQuickViewProduct(product)}
+              >
+                <div className="relative aspect-[4/3] sm:aspect-[4/5] rounded-lg overflow-hidden mb-2.5 bg-surface-subtle border border-border/30">
+                  <img
+                    src={product.image || 'https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=600&q=80'}
+                    alt={product.name}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                  <span className="absolute top-2 left-2 bg-surface/90 backdrop-blur-md px-2 py-0.5 rounded text-[9px] uppercase font-semibold tracking-wider text-on-surface border border-border/50">
+                    {product.category}
+                  </span>
+                </div>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h4 className="font-serif text-xs sm:text-sm font-semibold text-on-surface group-hover:text-primary transition-colors line-clamp-1">
+                      {product.name}
+                    </h4>
+                    <p className="text-xs font-bold text-primary mt-0.5">${product.price}</p>
+                  </div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleAddToCart(product);
+                    }}
+                    className="p-1.5 text-on-surface-muted hover:text-primary transition-colors"
+                    title="Add to Cart"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </section>
 
       {/* Brand Story & Philosophy */}
-      <section className="py-24 px-6 max-w-container-max mx-auto border-b border-border/50" id="philosophy">
-        <div className="flex flex-col md:flex-row items-center gap-12">
+      <section className="py-16 sm:py-24 px-4 sm:px-6 max-w-container-max mx-auto border-b border-border/50" id="philosophy">
+        <div className="flex flex-col md:flex-row items-center gap-8 sm:gap-12">
           <div className="w-full md:w-1/2">
             <div className="relative rounded-2xl overflow-hidden aspect-[4/3] border border-border shadow-luxury">
               <img
-                src={STITCH_ARTISAN}
+                src={ARTISAN_IMAGE}
                 alt="Artisan Leather Crafting"
                 className="w-full h-full object-cover"
                 onError={(e) => {
@@ -382,13 +684,13 @@ export function App() {
             <span className="text-xs uppercase tracking-[0.2em] text-primary font-semibold">
               Our Philosophy
             </span>
-            <h2 className="font-serif text-4xl sm:text-5xl font-medium text-on-surface mt-4 mb-6 leading-tight">
+            <h2 className="font-serif text-3xl sm:text-5xl font-medium text-on-surface mt-3 mb-5 leading-tight">
               Pieces that Stay.
             </h2>
-            <p className="font-sans text-sm md:text-base text-on-surface-muted mb-6 leading-relaxed">
+            <p className="font-sans text-xs sm:text-sm md:text-base text-on-surface-muted mb-5 leading-relaxed">
               We believe in the enduring beauty of things made well. Our collection is a curated dialogue between artisanal leatherwork and sculptural furniture—items designed to age with grace and carry the stories of your daily life.
             </p>
-            <p className="font-serif italic text-base text-on-surface mb-8 border-l-2 border-primary pl-4 py-1">
+            <p className="font-serif italic text-sm sm:text-base text-on-surface mb-6 border-l-2 border-primary pl-4 py-1">
               "Luxury isn't about the price, it's about the precision of the process and the purity of the material."
             </p>
             <a
@@ -402,24 +704,24 @@ export function App() {
         </div>
       </section>
 
-      {/* Main Catalog Grid */}
-      <section id="catalog" className="px-6 py-20 max-w-container-max mx-auto">
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
+      {/* Main Catalog Grid: Responsive 2-column mobile layout */}
+      <section id="catalog" className="px-4 sm:px-6 py-16 sm:py-20 max-w-container-max mx-auto">
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 sm:mb-12 gap-4">
           <div>
-            <h2 className="font-serif text-3xl font-medium text-on-surface">Curated Collection</h2>
+            <h2 className="font-serif text-2xl sm:text-3xl font-medium text-on-surface">Curated Collection</h2>
             <p className="text-xs uppercase tracking-widest text-on-surface-muted mt-1">
               Hand-finished in small studio batches
             </p>
           </div>
 
           {/* Category Filter Tabs */}
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-1.5 sm:gap-2">
             {categories.map((cat) => (
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
-                className={`px-5 py-2 text-xs font-semibold uppercase tracking-wider rounded transition-all duration-200 ${
-                  selectedCategory === cat
+                className={`px-3.5 py-1.5 text-[11px] sm:text-xs font-semibold uppercase tracking-wider rounded-lg transition-all duration-200 ${
+                  selectedCategory.toLowerCase() === cat.toLowerCase()
                     ? 'bg-primary text-on-primary shadow-luxury'
                     : 'bg-surface-subtle text-on-surface-muted hover:text-on-surface hover:bg-border/60'
                 }`}
@@ -430,17 +732,50 @@ export function App() {
           </div>
         </div>
 
-        {/* Product Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-12">
-          {filteredProducts.map((product) => (
-            <ProductCard
-              key={product.id}
-              product={product}
-              onQuickView={setQuickViewProduct}
-              onAddToCart={handleAddToCart}
-            />
-          ))}
-        </div>
+        {/* Product Grid: 2 columns on mobile, 3-4 on desktop */}
+        {filteredProducts.length === 0 ? (
+          <div className="py-16 px-6 text-center bg-surface-subtle/50 rounded-2xl border border-border/80 max-w-xl mx-auto shadow-luxury">
+            <Package className="w-12 h-12 mx-auto text-on-surface-muted/50 mb-3" />
+            <h3 className="font-serif text-lg font-medium text-on-surface mb-1">
+              No products in "{selectedCategory}" yet
+            </h3>
+            <p className="text-xs text-on-surface-muted max-w-md mx-auto mb-5 leading-relaxed">
+              We haven't added any items to this category yet. Browse our full catalog or check back soon!
+            </p>
+            <button
+              onClick={() => setSelectedCategory('All')}
+              className="px-5 py-2.5 text-xs font-semibold uppercase tracking-widest bg-primary text-on-primary rounded shadow-luxury hover:bg-primary-hover transition-colors"
+            >
+              Show All Products
+            </button>
+          </div>
+        ) : (
+          <div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
+              {filteredProducts.slice(0, 8).map((product) => (
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  onQuickView={setQuickViewProduct}
+                  onAddToCart={handleAddToCart}
+                />
+              ))}
+            </div>
+
+            {/* View All Products button to prevent endless mobile scrolling */}
+            <div className="mt-10 text-center">
+              <button
+                onClick={() => {
+                  setModalCategory(selectedCategory);
+                  setIsCategoryModalOpen(true);
+                }}
+                className="px-8 py-3.5 bg-surface border-2 border-primary/40 hover:border-primary text-on-surface hover:bg-primary hover:text-on-primary text-xs font-semibold uppercase tracking-widest rounded-xl transition-all shadow-md inline-flex items-center gap-2"
+              >
+                <ExternalLink className="w-4 h-4" /> View All ({filteredProducts.length} Items)
+              </button>
+            </div>
+          </div>
+        )}
       </section>
 
       {/* Testimonials Section */}
@@ -480,84 +815,6 @@ export function App() {
         </div>
       </section>
 
-      {/* Stitch Design System Token Showcase Section */}
-      <section className="px-6 py-20 bg-bg border-b border-border/80">
-        <div className="max-w-container-max mx-auto">
-          <div className="text-center max-w-2xl mx-auto mb-12">
-            <span className="text-xs uppercase tracking-[0.2em] text-primary font-semibold flex items-center justify-center gap-1.5">
-              <Palette className="w-4 h-4" /> Stitch Design DNA Tokens
-            </span>
-            <h2 className="font-serif text-3xl text-on-surface font-medium mt-2">
-              System Architecture & Tokens
-            </h2>
-            <p className="text-xs text-on-surface-muted mt-2">
-              Extracted directly from Stitch project <code className="bg-surface px-2 py-1 rounded border border-border">projects/2762622212420337914</code>
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="bg-surface p-6 rounded-lg border border-border shadow-luxury">
-              <div className="flex items-center gap-2 text-primary mb-4">
-                <Palette className="w-5 h-5" />
-                <h3 className="font-serif text-lg font-medium text-on-surface">Color Palette</h3>
-              </div>
-              <div className="space-y-3 text-xs font-mono">
-                <div className="flex items-center justify-between p-2 rounded bg-bg">
-                  <span>Surface (Light)</span>
-                  <div className="flex items-center gap-2">
-                    <span className="w-4 h-4 rounded-full border border-border" style={{ backgroundColor: '#FAF7F2' }}></span>
-                    <code>#FAF7F2</code>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between p-2 rounded bg-bg">
-                  <span>Primary Accent</span>
-                  <div className="flex items-center gap-2">
-                    <span className="w-4 h-4 rounded-full" style={{ backgroundColor: '#81511F' }}></span>
-                    <code>#81511F</code>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between p-2 rounded bg-bg">
-                  <span>Dark Surface</span>
-                  <div className="flex items-center gap-2">
-                    <span className="w-4 h-4 rounded-full" style={{ backgroundColor: '#181717' }}></span>
-                    <code>#181717</code>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-surface p-6 rounded-lg border border-border shadow-luxury">
-              <div className="flex items-center gap-2 text-primary mb-4">
-                <Layers className="w-5 h-5" />
-                <h3 className="font-serif text-lg font-medium text-on-surface">Typography System</h3>
-              </div>
-              <div className="space-y-4">
-                <div>
-                  <span className="text-[10px] uppercase tracking-widest text-on-surface-muted block">Display & Headings</span>
-                  <p className="font-serif text-xl font-medium text-on-surface mt-1">Playfair Display</p>
-                </div>
-                <div>
-                  <span className="text-[10px] uppercase tracking-widest text-on-surface-muted block">Body, UI & Controls</span>
-                  <p className="font-sans text-sm font-regular text-on-surface mt-1">Inter (14px - 18px)</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-surface p-6 rounded-lg border border-border shadow-luxury">
-              <div className="flex items-center gap-2 text-primary mb-4">
-                <Compass className="w-5 h-5" />
-                <h3 className="font-serif text-lg font-medium text-on-surface">Shape & Elevation</h3>
-              </div>
-              <div className="space-y-3 text-xs text-on-surface-muted">
-                <p>• <strong>Button Radius:</strong> 0.5rem (8px rounded)</p>
-                <p>• <strong>Card Corner Radius:</strong> 1rem (16px)</p>
-                <p>• <strong>Shadow:</strong> Tonal Layering + 0px 10px 40px rgba(26,26,26,0.04)</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* Newsletter Section */}
       <section className="py-20 px-6 bg-surface">
         <div className="max-w-xl mx-auto text-center">
@@ -583,11 +840,13 @@ export function App() {
         <div className="max-w-container-max mx-auto grid grid-cols-1 md:grid-cols-12 gap-12">
           <div className="md:col-span-5 space-y-4">
             <div className="flex items-center gap-3">
-              <img src={STITCH_LOGO} alt="Logo" className="h-8 w-auto object-contain" />
+              <div className="w-8 h-8 rounded-lg bg-primary text-on-primary flex items-center justify-center font-bold text-xs tracking-tighter shadow-sm">
+                TTL
+              </div>
               <h3 className="font-serif text-2xl text-on-surface font-semibold tracking-tight">THE TOTE LIFE</h3>
             </div>
             <p className="text-xs text-on-surface-muted leading-relaxed max-w-sm">
-              Curated carriers and furniture designed for a life lived with intent. Built with Stitch Design System DNA.
+              Curated carriers and furniture designed for a life lived with intent.
             </p>
           </div>
           <div className="md:col-span-3 space-y-2 text-xs">
@@ -605,6 +864,17 @@ export function App() {
       </footer>
 
       {/* Modals & Drawers */}
+      <CategoryModal
+        isOpen={isCategoryModalOpen}
+        onClose={() => setIsCategoryModalOpen(false)}
+        categoryName={modalCategory}
+        categories={categories}
+        products={storefrontProducts}
+        onSelectCategory={(cat) => setSelectedCategory(cat)}
+        onQuickView={setQuickViewProduct}
+        onAddToCart={handleAddToCart}
+      />
+
       <QuickViewModal
         product={quickViewProduct}
         onClose={() => setQuickViewProduct(null)}
@@ -625,7 +895,22 @@ export function App() {
         onClose={() => setIsCheckoutOpen(false)}
         cart={cart}
         onClearCart={() => setCart([])}
+        currentUser={currentUser}
+        onOrderCreated={handleOrderCreated}
       />
+
+      <ClientAuthModal
+        isOpen={isClientAuthOpen}
+        onClose={() => setIsClientAuthOpen(false)}
+        currentUser={currentUser}
+        onLogin={handleLoginUser}
+        onLogout={handleLogoutUser}
+        userOrders={userOrders}
+        initialTab={clientAuthTab}
+      />
+
+      {/* Floating Customer Support & Telegram Bot Chat */}
+      <SupportChatWidget currentUser={currentUser} />
     </div>
   );
 }

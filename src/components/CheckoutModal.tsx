@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
-import { X, CheckCircle, ShieldCheck, ArrowRight, Truck, MapPin, CreditCard } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, CheckCircle, ShieldCheck, ArrowRight, Truck, MapPin, AlertCircle } from 'lucide-react';
 import type { Product } from './ProductCard';
 import { Button } from './Button';
+import type { ClientUser, ClientOrder } from './ClientAuthModal';
 
 interface CartItem extends Product {
   quantity: number;
@@ -12,6 +13,8 @@ interface CheckoutModalProps {
   onClose: () => void;
   cart: CartItem[];
   onClearCart: () => void;
+  currentUser?: ClientUser | null;
+  onOrderCreated?: (order: ClientOrder) => void;
 }
 
 export const CheckoutModal: React.FC<CheckoutModalProps> = ({
@@ -19,9 +22,14 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   onClose,
   cart,
   onClearCart,
+  currentUser,
+  onOrderCreated,
 }) => {
   const [step, setStep] = useState<'checkout' | 'confirmed'>('checkout');
   const [deliveryMethod, setDeliveryMethod] = useState<'door' | 'pickup'>('door');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [orderId, setOrderId] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
   const [formData, setFormData] = useState({
     email: '',
     firstName: '',
@@ -32,15 +40,82 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
     state: '',
   });
 
+  useEffect(() => {
+    if (currentUser) {
+      const nameParts = currentUser.name.split(' ');
+      setFormData({
+        email: currentUser.email || '',
+        firstName: nameParts[0] || '',
+        lastName: nameParts.slice(1).join(' ') || '',
+        phone: currentUser.phone || '',
+        address: currentUser.address || '',
+        city: currentUser.city || '',
+        state: currentUser.state || '',
+      });
+    }
+  }, [currentUser, isOpen]);
+
   if (!isOpen) return null;
 
   const subtotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
   const deliveryFee = deliveryMethod === 'door' ? 15 : 0;
   const grandTotal = subtotal + deliveryFee;
 
-  const handleSubmitOrder = (e: React.FormEvent) => {
+  const handleSubmitOrder = async (e: React.FormEvent) => {
     e.preventDefault();
-    setStep('confirmed');
+    setIsSubmitting(true);
+    setErrorMsg('');
+
+    const fallbackOrderNumber = `TTL-${Math.floor(10000 + Math.random() * 90000)}`;
+
+    try {
+      // Send order to backend API
+      const res = await fetch('/api/orders/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customer_name: `${formData.firstName} ${formData.lastName}`.trim(),
+          customer_email: formData.email,
+          customer_phone: formData.phone,
+          delivery_method: deliveryMethod,
+          shipping_address: deliveryMethod === 'door' ? {
+            address: formData.address || 'Default Street',
+            city: formData.city || 'City',
+            state: formData.state || 'State',
+          } : undefined,
+          items: cart.map(i => ({ product_id: i.id, quantity: i.quantity })),
+          customer_id: currentUser?.id,
+        }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        throw new Error(data.message || 'Failed to place order. Please try again.');
+      }
+
+      const finalOrderId = data.order_id ? data.order_id.slice(0, 8).toUpperCase() : fallbackOrderNumber;
+      setOrderId(finalOrderId);
+
+      if (onOrderCreated) {
+        onOrderCreated({
+          id: finalOrderId,
+          date: new Date().toISOString().split('T')[0],
+          status: 'pending',
+          total: grandTotal,
+          itemsCount: cart.reduce((a, c) => a + c.quantity, 0),
+          deliveryMethod: deliveryMethod === 'door' ? 'Door Delivery' : 'Store Pickup',
+          itemsSummary: cart.map(i => `${i.name} (${i.quantity}x)`).join(', '),
+        });
+      }
+
+      setStep('confirmed');
+    } catch (err: any) {
+      console.error('Order creation failed:', err);
+      setErrorMsg(err.message || 'Failed to complete order. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleFinish = () => {
@@ -55,7 +130,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-start sm:items-center justify-center bg-black/50 backdrop-blur-sm overflow-y-auto p-0 sm:p-4">
+    <div className="fixed inset-0 z-[80] flex items-start sm:items-center justify-center bg-black/50 backdrop-blur-sm overflow-y-auto p-0 sm:p-4">
       <div className="relative w-full sm:max-w-lg bg-surface sm:rounded-xl border-0 sm:border sm:border-border shadow-luxury min-h-screen sm:min-h-0 sm:max-h-[90vh] flex flex-col">
 
         {/* Header */}
@@ -76,7 +151,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
           <form onSubmit={handleSubmitOrder} className="flex-1 overflow-y-auto">
             <div className="p-4 space-y-5">
 
-              {/* Order Items (compact) */}
+              {/* Order Items */}
               <div>
                 <h3 className="text-[11px] uppercase tracking-widest text-on-surface-muted font-semibold mb-2">
                   Items ({cart.reduce((a, c) => a + c.quantity, 0)})
@@ -99,7 +174,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
               {/* Contact */}
               <div>
-                <h3 className="text-[11px] uppercase tracking-widest text-on-surface-muted font-semibold mb-2">Contact</h3>
+                <h3 className="text-[11px] uppercase tracking-widest text-on-surface-muted font-semibold mb-2">Contact Details</h3>
                 <div className="grid grid-cols-2 gap-2">
                   <input
                     type="text"
@@ -138,7 +213,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
               {/* Delivery Method */}
               <div>
-                <h3 className="text-[11px] uppercase tracking-widest text-on-surface-muted font-semibold mb-2">Delivery</h3>
+                <h3 className="text-[11px] uppercase tracking-widest text-on-surface-muted font-semibold mb-2">Delivery Method</h3>
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
@@ -166,14 +241,14 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                   >
                     <MapPin className={`w-4 h-4 ${deliveryMethod === 'pickup' ? 'text-primary' : 'text-on-surface-muted'}`} />
                     <span className={`text-xs font-semibold ${deliveryMethod === 'pickup' ? 'text-primary' : 'text-on-surface'}`}>
-                      Pick Up
+                      Store Pick Up
                     </span>
                     <span className="text-[10px] text-on-surface-muted">Free • Same day</span>
                   </button>
                 </div>
               </div>
 
-              {/* Address (only for door delivery) */}
+              {/* Shipping Address */}
               {deliveryMethod === 'door' && (
                 <div>
                   <h3 className="text-[11px] uppercase tracking-widest text-on-surface-muted font-semibold mb-2">Shipping Address</h3>
@@ -208,7 +283,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                 </div>
               )}
 
-              {/* Pickup Location (only for pickup) */}
+              {/* Pickup Location */}
               {deliveryMethod === 'pickup' && (
                 <div className="bg-surface-subtle border border-border rounded-lg p-3">
                   <div className="flex items-start gap-2">
@@ -221,21 +296,6 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                   </div>
                 </div>
               )}
-
-              {/* Payment – Paystack */}
-              <div>
-                <h3 className="text-[11px] uppercase tracking-widest text-on-surface-muted font-semibold mb-2">Payment</h3>
-                <div className="flex items-center gap-3 p-3 rounded-lg border border-primary bg-primary/5 ring-1 ring-primary/30">
-                  <div className="w-8 h-8 rounded-md bg-[#0BA4DB] flex items-center justify-center flex-shrink-0">
-                    <CreditCard className="w-4 h-4 text-white" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-xs font-semibold text-on-surface">Paystack</p>
-                    <p className="text-[10px] text-on-surface-muted">Cards, Bank Transfer, Mobile Money</p>
-                  </div>
-                  <span className="text-[10px] text-primary font-semibold bg-primary-container/30 px-2 py-0.5 rounded-full">Selected</span>
-                </div>
-              </div>
 
             </div>
 
@@ -255,12 +315,26 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                   <span className="text-primary">${grandTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                 </div>
               </div>
-              <Button variant="primary" size="lg" className="w-full py-3 text-xs font-semibold uppercase tracking-widest flex items-center justify-center gap-2">
-                Pay with Paystack <ArrowRight className="w-3.5 h-3.5" />
+
+              {errorMsg && (
+                <div className="p-3 rounded-lg bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                  <span>{errorMsg}</span>
+                </div>
+              )}
+
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                variant="primary"
+                size="lg"
+                className="w-full py-3 text-xs font-semibold uppercase tracking-widest flex items-center justify-center gap-2"
+              >
+                {isSubmitting ? 'Confirming Order...' : 'Complete & Confirm Order'} <ArrowRight className="w-3.5 h-3.5" />
               </Button>
               <div className="flex items-center justify-center gap-1.5 text-[10px] text-on-surface-muted">
                 <ShieldCheck className="w-3 h-3" />
-                <span>Secured by Paystack • 256-bit SSL encryption</span>
+                <span>Instant Confirmation & Receipt</span>
               </div>
             </div>
           </form>
@@ -270,12 +344,12 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
             <div className="w-14 h-14 bg-primary-container text-primary rounded-full flex items-center justify-center mb-4">
               <CheckCircle className="w-8 h-8" />
             </div>
-            <span className="text-[10px] uppercase tracking-widest text-primary font-semibold">Order #TTL-{Math.floor(10000 + Math.random() * 90000)}</span>
+            <span className="text-[10px] uppercase tracking-widest text-primary font-semibold">Order #{orderId}</span>
             <h3 className="font-serif text-2xl font-normal text-on-surface mt-2">
               Thank You{formData.firstName ? `, ${formData.firstName}` : ''}!
             </h3>
             <p className="text-xs text-on-surface-muted mt-2 max-w-xs leading-relaxed">
-              Your order has been confirmed. A receipt and {deliveryMethod === 'door' ? 'tracking details' : 'pickup instructions'} have been sent to <strong>{formData.email || 'your email'}</strong>.
+              Your order has been placed and confirmed! A receipt and {deliveryMethod === 'door' ? 'tracking details' : 'pickup instructions'} have been sent to <strong>{formData.email || 'your email'}</strong>.
             </p>
 
             <div className="w-full bg-surface-subtle p-3 rounded-lg border border-border text-left mt-5 space-y-1.5 text-xs">
@@ -303,7 +377,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                 </>
               )}
               <div className="flex justify-between text-on-surface-muted pt-1 border-t border-border/60">
-                <span>Total Paid</span>
+                <span>Total</span>
                 <span className="font-bold text-primary">${grandTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
               </div>
             </div>

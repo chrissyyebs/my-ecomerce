@@ -17,7 +17,7 @@ export const QuickViewModal: React.FC<QuickViewModalProps> = ({
   if (!product) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm animate-fade-in">
+    <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm animate-fade-in">
       <div className="relative w-full sm:max-w-3xl bg-surface sm:rounded-xl border-0 sm:border sm:border-border shadow-luxury overflow-hidden flex flex-col max-h-[95vh] sm:max-h-[85vh]">
 
         {/* Close Button */}
