@@ -11,12 +11,29 @@ node_modules
 dist
 dist-ssr
 *.local
+*.env
 .env
 .env.*
+.env.local
+.env.development
+.env.production
 !.env.example
-server/.env
-server/.env.*
-!server/.env.example
+backend/.env
+backend/.env.*
+backend/.env.local
+!backend/.env.example
+frontend/.env
+frontend/.env.*
+frontend/.env.local
+!frontend/.env.example
+
+# SQL Database & Migration files
+*.sql
+
+# Temporary & Test Scratch files
+scratch/
+*.test.*
+*.spec.*
 
 # Editor directories and files
 .vscode/*

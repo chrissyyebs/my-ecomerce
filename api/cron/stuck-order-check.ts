@@ -3,12 +3,12 @@
 // Runs every 15-30 mins (e.g., */30 * * * *)
 // ============================================================
 
-import { loadServerEnv } from '../../server/config/env.js';
+import { loadServerEnv } from '../../backend/config/env.js';
 loadServerEnv();
 
 import type { Request, Response } from 'express';
-import { getStuckOrders } from '../../server/services/analytics.service.js';
-import { notifyStuckOrders } from '../../server/services/telegram.service.js';
+import { getStuckOrders } from '../../backend/services/analytics.service.js';
+import { notifyStuckOrders } from '../../backend/services/telegram.service.js';
 
 export default async function handler(req: Request, res: Response): Promise<void> {
   const secret = process.env.CRON_SECRET;

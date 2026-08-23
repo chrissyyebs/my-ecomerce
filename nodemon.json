@@ -1,6 +1,6 @@
 {
-  "watch": ["server"],
+  "watch": ["backend"],
   "ext": "ts,js,json",
-  "ignore": ["server/**/*.test.ts"],
-  "exec": "tsx server/index.ts"
+  "ignore": ["backend/**/*.test.ts"],
+  "exec": "tsx backend/index.ts"
 }

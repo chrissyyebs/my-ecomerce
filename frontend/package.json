@@ -1,0 +1,10 @@
+{
+  "name": "tote-life-frontend",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "npm run dev --prefix ..",
+    "build": "npm run build --prefix ..",
+    "preview": "npm run preview --prefix .."
+  }
+}

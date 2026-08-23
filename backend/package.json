@@ -1,0 +1,10 @@
+{
+  "name": "tote-life-backend",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "npm run server --prefix ..",
+    "server": "npm run server --prefix ..",
+    "tunnel": "npm run tunnel --prefix .."
+  }
+}

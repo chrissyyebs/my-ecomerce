@@ -3,12 +3,12 @@
 // Runs once monthly (e.g., 0 9 1 * *)
 // ============================================================
 
-import { loadServerEnv } from '../../server/config/env.js';
+import { loadServerEnv } from '../../backend/config/env.js';
 loadServerEnv();
 
 import type { Request, Response } from 'express';
-import { getSalesSummary } from '../../server/services/analytics.service.js';
-import { notifySalesSummary } from '../../server/services/telegram.service.js';
+import { getSalesSummary } from '../../backend/services/analytics.service.js';
+import { notifySalesSummary } from '../../backend/services/telegram.service.js';
 
 export default async function handler(req: Request, res: Response): Promise<void> {
   const secret = process.env.CRON_SECRET;

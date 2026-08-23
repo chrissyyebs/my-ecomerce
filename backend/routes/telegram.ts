@@ -1,18 +1,14 @@
 // ============================================================
-// Telegram Webhook Function (Vercel Serverless)
-// Webhook Mode Only — Handles admin replies & inline buttons
-// Fast ACK (200 OK) then background processing
+// Telegram Webhook Route Handler
+// Shared between api/telegram/webhook.ts (Vercel) and backend/app.ts (local)
 // ============================================================
 
-import { loadServerEnv } from '../../backend/config/env.js';
-loadServerEnv();
-
 import type { Request, Response } from 'express';
-import { supabase } from '../../backend/config/supabase.js';
-import { answerCallbackQuery, sendMessage } from '../../backend/services/telegram.service.js';
-import { logAction } from '../../backend/services/audit.service.js';
+import { supabase } from '../config/supabase.js';
+import { answerCallbackQuery, sendMessage } from '../services/telegram.service.js';
+import { logAction } from '../services/audit.service.js';
 
-export default async function handler(req: Request, res: Response): Promise<void> {
+export async function telegramWebhookHandler(req: Request, res: Response): Promise<void> {
   // Always acknowledge immediately to Telegram with 200 OK
   res.status(200).send('OK');
 
@@ -22,15 +18,14 @@ export default async function handler(req: Request, res: Response): Promise<void
     const update = req.body;
     if (!update) return;
 
-    // Handle Callback Queries (Inline Button Taps, e.g. order status actions)
+    // Handle Callback Queries (inline button taps)
     if (update.callback_query) {
       const cb = update.callback_query;
       const dataStr = cb.data || '';
-      const chatId = String(cb.message?.chat_id || cb.from.id);
+      const chatId = String(cb.message?.chat?.id || cb.from.id);
 
       await answerCallbackQuery(cb.id, 'Processing action...');
 
-      // Format: action:order_id (e.g., "confirm_order:uuid" or "cancel_order:uuid")
       const [action, orderId] = dataStr.split(':');
 
       if (action && orderId) {
@@ -42,6 +37,7 @@ export default async function handler(req: Request, res: Response): Promise<void
 
           await sendMessage(chatId, `✅ Order <code>${orderId.slice(0, 8)}</code> set to <b>Processing</b>.`);
           await logAction('telegram_bot', 'status_change', 'order', orderId, { action, via: 'telegram' });
+
         } else if (action === 'cancel_order') {
           await supabase
             .from('orders')
@@ -55,13 +51,13 @@ export default async function handler(req: Request, res: Response): Promise<void
       return;
     }
 
-    // Handle Messages (Admin text replies to customer support)
-    if (update.message && update.message.text) {
+    // Handle Text Commands from Admin
+    if (update.message?.text) {
       const msg = update.message;
-      const text = msg.text;
+      const text = msg.text as string;
+      const chatId = String(msg.chat.id);
 
-      // Check if text starts with a conversation command or reply context
-      // Format: /reply <conv_id> <message> OR replying to a customer message tag
+      // /reply <conv_id> <message>
       if (text.startsWith('/reply ')) {
         const parts = text.split(' ');
         const convId = parts[1];
@@ -75,31 +71,49 @@ export default async function handler(req: Request, res: Response): Promise<void
             .single();
 
           if (conv) {
-            // Write admin message to support_messages (Supabase Realtime triggers push to customer UI)
             await supabase.from('support_messages').insert({
               conversation_id: conv.id,
               sender: 'admin',
               sender_id: `telegram_admin_${msg.from.id}`,
               content: replyText,
             });
-
-            await sendMessage(String(msg.chat.id), `✉️ Reply sent to customer in conversation <code>${convId.slice(0, 8)}</code>.`);
+            await sendMessage(chatId, `✉️ Reply sent to customer in conversation <code>${convId.slice(0, 8)}</code>.`);
           } else {
-            await sendMessage(String(msg.chat.id), `⚠️ Conversation ID <code>${convId}</code> not found.`);
+            await sendMessage(chatId, `⚠️ Conversation ID <code>${convId}</code> not found.`);
           }
         }
+
+      // /inventory command
       } else if (text === '/inventory') {
-        // Command /inventory
         const { count, error } = await supabase
           .from('products')
           .select('id', { count: 'exact', head: true })
           .eq('is_active', true);
 
         if (!error) {
-          await sendMessage(String(msg.chat.id), `📦 Current active product count in catalog: <b>${count || 0}</b>`);
+          await sendMessage(chatId, `📦 Active products in catalog: <b>${count ?? 0}</b>`);
+        }
+
+      // /orders command - show recent pending orders
+      } else if (text === '/orders') {
+        const { data: orders } = await supabase
+          .from('orders')
+          .select('id, status, total_amount, created_at')
+          .eq('status', 'pending')
+          .order('created_at', { ascending: false })
+          .limit(5);
+
+        if (orders && orders.length > 0) {
+          const lines = orders.map(o =>
+            `• <code>${o.id.slice(0, 8)}</code> — $${o.total_amount} (${o.status})`
+          ).join('\n');
+          await sendMessage(chatId, `🛍 <b>Recent Pending Orders:</b>\n${lines}`);
+        } else {
+          await sendMessage(chatId, `✅ No pending orders right now.`);
         }
       }
     }
+
   } catch (err) {
     console.error('[TelegramWebhook] Handler error:', err);
   }

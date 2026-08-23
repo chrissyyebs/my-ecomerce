@@ -3,12 +3,12 @@
 // Runs every few hours (e.g., 0 */6 * * *)
 // ============================================================
 
-import { loadServerEnv } from '../../server/config/env.js';
+import { loadServerEnv } from '../../backend/config/env.js';
 loadServerEnv();
 
 import type { Request, Response } from 'express';
-import { getLowStockProducts } from '../../server/services/analytics.service.js';
-import { notifyLowStock } from '../../server/services/telegram.service.js';
+import { getLowStockProducts } from '../../backend/services/analytics.service.js';
+import { notifyLowStock } from '../../backend/services/telegram.service.js';
 
 export default async function handler(req: Request, res: Response): Promise<void> {
   const secret = process.env.CRON_SECRET;

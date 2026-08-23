@@ -1,2 +1,0 @@
-// Paystack integration removed
-export {};

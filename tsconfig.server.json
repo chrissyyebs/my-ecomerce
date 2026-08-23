@@ -16,6 +16,6 @@
     "noEmit": true,
     "types": ["node"]
   },
-  "include": ["server/**/*", "api/**/*"],
-  "exclude": ["node_modules", "src", "dist"]
+  "include": ["backend/**/*", "api/**/*"],
+  "exclude": ["node_modules", "frontend", "dist"]
 }
