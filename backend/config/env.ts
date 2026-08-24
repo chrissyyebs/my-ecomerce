@@ -14,18 +14,19 @@ export function loadServerEnv(): void {
     return;
   }
 
-  const backendEnvLocal = resolve(process.cwd(), 'backend/.env.local');
-  const backendEnv = resolve(process.cwd(), 'backend/.env');
+  const pathsToTry = [
+    resolve(process.cwd(), '.env.local'),
+    resolve(process.cwd(), '.env'),
+    resolve(process.cwd(), 'backend/.env.local'),
+    resolve(process.cwd(), 'backend/.env'),
+    resolve(process.cwd(), '.env.server.local'),
+  ];
 
-  if (existsSync(backendEnvLocal)) {
-    config({ path: backendEnvLocal });
-  } else if (existsSync(backendEnv)) {
-    config({ path: backendEnv });
-  } else {
-    // Fallback to root .env.server.local if present
-    const rootServerEnv = resolve(process.cwd(), '.env.server.local');
-    if (existsSync(rootServerEnv)) {
-      config({ path: rootServerEnv });
+  for (const envPath of pathsToTry) {
+    if (existsSync(envPath)) {
+      config({ path: envPath });
+      break;
     }
   }
 }
+
