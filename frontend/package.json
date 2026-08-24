@@ -3,8 +3,9 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "install": "cd .. && npm install",
     "dev": "npm run dev --prefix ..",
-    "build": "npm run build --prefix ..",
+    "build": "cd .. && npm run build",
     "preview": "npm run preview --prefix .."
   }
 }
