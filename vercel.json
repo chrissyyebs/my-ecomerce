@@ -1,7 +1,7 @@
 {
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api" },
-    { "source": "/(.*)", "destination": "/index.html" }
+    { "source": "/((?!api|assets|.*\\..*).*)", "destination": "/index.html" }
   ],
   "crons": [
     { "path": "/api/cron/daily-health-check", "schedule": "0 7 * * *" },
