@@ -3,10 +3,7 @@
     { "source": "/api/(.*)", "destination": "/api" }
   ],
   "crons": [
-    { "path": "/api/cron/daily-sales-summary", "schedule": "0 8 * * *" },
-    { "path": "/api/cron/weekly-sales-summary", "schedule": "0 9 * * 1" },
-    { "path": "/api/cron/monthly-sales-summary", "schedule": "0 9 1 * *" },
-    { "path": "/api/cron/low-stock-check", "schedule": "0 */6 * * *" },
-    { "path": "/api/cron/stuck-order-check", "schedule": "*/30 * * * *" }
+    { "path": "/api/cron/daily-health-check", "schedule": "0 7 * * *" },
+    { "path": "/api/cron/daily-sales-summary", "schedule": "0 8 * * *" }
   ]
 }
