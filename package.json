@@ -7,7 +7,7 @@
     "dev": "vite frontend",
     "server": "nodemon",
     "tunnel": "node backend/scripts/start-tunnel.mjs",
-    "build": "tsc -b && vite build frontend",
+    "build": "tsc -b && vite build frontend && node -e \"fs.cpSync('frontend/dist', 'dist', {recursive: true})\"",
     "lint": "oxlint",
     "preview": "vite preview frontend"
   },
