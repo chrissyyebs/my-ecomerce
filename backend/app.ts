@@ -20,8 +20,15 @@ import { telegramWebhookHandler } from './routes/telegram.js';
 export function createApp() {
   const app = express();
 
-  // Basic security & CORS
-  app.use(cors());
+  // CORS — restrict to frontend origin
+  const allowedOrigins = [
+    process.env.FRONTEND_URL || 'http://localhost:5173',
+  ].filter(Boolean);
+
+  app.use(cors({
+    origin: allowedOrigins,
+    credentials: true,
+  }));
 
   // JSON Body Parser with rawBody preservation
   app.use(

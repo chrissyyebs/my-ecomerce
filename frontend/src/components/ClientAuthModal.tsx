@@ -5,6 +5,7 @@ import {
   Eye, EyeOff, Check, AlertCircle, RefreshCw, KeyRound, Trash2, AlertTriangle
 } from 'lucide-react';
 import { Button } from './Button';
+import { apiUrl } from '../config/api';
 
 export interface ClientUser {
   id: string;
@@ -151,7 +152,7 @@ export const ClientAuthModal: React.FC<ClientAuthModalProps> = ({
 
   const fetchMyOrders = async () => {
     try {
-      const res = await fetch('/api/orders/mine');
+      const res = await fetch(apiUrl('/orders/mine'));
       if (res.ok) {
         const data = await res.json();
         if (data.orders) {
@@ -232,7 +233,7 @@ export const ClientAuthModal: React.FC<ClientAuthModalProps> = ({
     setLoading(true);
 
     try {
-      const res = await fetch('/api/auth/login', {
+      const res = await fetch(apiUrl('/auth/login'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -266,7 +267,7 @@ export const ClientAuthModal: React.FC<ClientAuthModalProps> = ({
 
     try {
       // Validate signup & check if already registered
-      const validateRes = await fetch('/api/auth/validate-signup', {
+      const validateRes = await fetch(apiUrl('/auth/validate-signup'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -284,7 +285,7 @@ export const ClientAuthModal: React.FC<ClientAuthModalProps> = ({
       }
 
       // Send verification OTP to user's email
-      const res = await fetch('/api/auth/send-otp', {
+      const res = await fetch(apiUrl('/auth/send-otp'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -329,7 +330,7 @@ export const ClientAuthModal: React.FC<ClientAuthModalProps> = ({
     setLoading(true);
 
     try {
-      const res = await fetch('/api/auth/register', {
+      const res = await fetch(apiUrl('/auth/register'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -368,7 +369,7 @@ export const ClientAuthModal: React.FC<ClientAuthModalProps> = ({
     setLoading(true);
 
     try {
-      const res = await fetch('/api/auth/send-otp', {
+      const res = await fetch(apiUrl('/auth/send-otp'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -423,7 +424,7 @@ export const ClientAuthModal: React.FC<ClientAuthModalProps> = ({
     setLoading(true);
 
     try {
-      const res = await fetch('/api/auth/reset-password', {
+      const res = await fetch(apiUrl('/auth/reset-password'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -459,7 +460,7 @@ export const ClientAuthModal: React.FC<ClientAuthModalProps> = ({
     setLoading(true);
 
     try {
-      const res = await fetch('/api/auth/send-otp', {
+      const res = await fetch(apiUrl('/auth/send-otp'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1244,7 +1245,7 @@ export const ClientAuthModal: React.FC<ClientAuthModalProps> = ({
                           setDeleteError('');
                           setLoading(true);
                           try {
-                            const res = await fetch('/api/auth/delete-account', {
+                            const res = await fetch(apiUrl('/auth/delete-account'), {
                               method: 'POST',
                               headers: { 'Content-Type': 'application/json' },
                               body: JSON.stringify({

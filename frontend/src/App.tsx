@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { apiUrl } from './config/api';
 import { Header } from './components/Header';
 import { ProductCard, type Product } from './components/ProductCard';
 import { QuickViewModal } from './components/QuickViewModal';
@@ -77,8 +78,8 @@ export function App() {
   const fetchLiveProductsAndCategories = useCallback(async () => {
     try {
       const [pRes, cRes] = await Promise.all([
-        fetch('/api/products'),
-        fetch('/api/categories'),
+        fetch(apiUrl('/products')),
+        fetch(apiUrl('/categories')),
       ]);
 
       if (pRes.ok) {

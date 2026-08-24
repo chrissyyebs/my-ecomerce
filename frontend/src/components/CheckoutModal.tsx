@@ -4,6 +4,8 @@ import type { Product } from './ProductCard';
 import { Button } from './Button';
 import type { ClientUser, ClientOrder } from './ClientAuthModal';
 
+import { apiUrl } from '../config/api';
+
 interface CartItem extends Product {
   quantity: number;
 }
@@ -70,7 +72,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
     try {
       // Send order to backend API
-      const res = await fetch('/api/orders/checkout', {
+      const res = await fetch(apiUrl('/orders/checkout'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

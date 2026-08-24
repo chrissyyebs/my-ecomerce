@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { MessageSquare, X, Send, Bot, User, Sparkles } from 'lucide-react';
 import type { ClientUser } from './ClientAuthModal';
+import { apiUrl } from '../config/api';
 
 interface Message {
   id: string;
@@ -73,7 +74,7 @@ export const SupportChatWidget: React.FC<SupportChatWidgetProps> = ({ currentUse
 
     const fetchMessages = async () => {
       try {
-        const res = await fetch(`/api/support/public-messages/${conversationId}`);
+        const res = await fetch(apiUrl(`/support/public-messages/${conversationId}`));
         if (res.ok) {
           const data = await res.json();
           if (data.messages && Array.isArray(data.messages)) {
@@ -128,7 +129,7 @@ export const SupportChatWidget: React.FC<SupportChatWidgetProps> = ({ currentUse
     // Try posting to backend API (relays to Telegram if bot token configured)
     try {
       if (conversationId) {
-        const res = await fetch(`/api/support/public-message`, {
+        const res = await fetch(apiUrl('/support/public-message'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

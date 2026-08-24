@@ -5,6 +5,7 @@ import {
   AlertTriangle, Trash2, Upload, ImageIcon,
 } from 'lucide-react';
 import { ApexAnalyticsCharts } from './ApexAnalyticsCharts';
+import { apiUrl } from '../config/api';
 
 interface ProductItem {
   id: string;
@@ -158,7 +159,7 @@ export function AdminPortal() {
     setLoading(true);
     setErrorMsg('');
     try {
-      const res = await fetch('/api/admin/verify-password', {
+      const res = await fetch(apiUrl('/admin/verify-password'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password: passwordToVerify }),
@@ -187,9 +188,9 @@ export function AdminPortal() {
   const loadDashboardData = async () => {
     try {
       const [pRes, cRes, oRes] = await Promise.all([
-        fetch('/api/products'),
-        fetch('/api/categories'),
-        fetch('/api/orders/admin/all-orders'),
+        fetch(apiUrl('/products')),
+        fetch(apiUrl('/categories')),
+        fetch(apiUrl('/orders/admin/all-orders')),
       ]);
 
       if (pRes.ok) {
@@ -224,7 +225,7 @@ export function AdminPortal() {
     loadDashboardData();
 
     const interval = setInterval(() => {
-      fetch('/api/orders/admin/all-orders')
+      fetch(apiUrl('/orders/admin/all-orders'))
         .then((res) => (res.ok ? res.json() : null))
         .then((data) => {
           if (data?.orders) setAdminOrders(data.orders);
@@ -289,7 +290,7 @@ export function AdminPortal() {
     setDeleteConfirmId(null);
 
     try {
-      await fetch(`/api/admin/products/${id}`, { method: 'DELETE' });
+      await fetch(apiUrl(`/admin/products/${id}`), { method: 'DELETE' });
     } catch {
       /* offline OK */
     }
@@ -322,8 +323,8 @@ export function AdminPortal() {
       selectedFiles.forEach((f) => body.append('images', f));
 
       const endpoint = editingProduct
-        ? `/api/admin/products/${editingProduct.id}`
-        : '/api/admin/products';
+        ? apiUrl(`/admin/products/${editingProduct.id}`)
+        : apiUrl('/admin/products');
       const method = editingProduct ? 'PUT' : 'POST';
 
       const res = await fetch(endpoint, { method, body });
@@ -454,7 +455,7 @@ export function AdminPortal() {
       body.append('parent_group', (newCatParent || newCatName).trim().toLowerCase());
       if (catImageFile) body.append('image', catImageFile);
 
-      const res = await fetch('/api/admin/categories', { method: 'POST', body });
+      const res = await fetch(apiUrl('/admin/categories'), { method: 'POST', body });
       if (res.ok) {
         const data = await res.json();
         console.log('✅ Category created in DB:', data.category);
@@ -496,7 +497,7 @@ export function AdminPortal() {
     updateCategories(updated);
 
     try {
-      await fetch(`/api/admin/categories/${catId}`, { method: 'DELETE' });
+      await fetch(apiUrl(`/admin/categories/${catId}`), { method: 'DELETE' });
     } catch { /* offline OK */ }
   };
 
@@ -518,7 +519,7 @@ export function AdminPortal() {
     setEditingCatId(null);
 
     try {
-      await fetch(`/api/admin/categories/${editingCatId}`, {
+      await fetch(apiUrl(`/admin/categories/${editingCatId}`), {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: editingCatName.trim() }),
@@ -530,7 +531,7 @@ export function AdminPortal() {
 
   const handleUpdateOrderStatus = async (orderId: string, newStatus: string) => {
     try {
-      await fetch(`/api/orders/admin/${orderId}/status`, {
+      await fetch(apiUrl(`/orders/admin/${orderId}/status`), {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus }),
