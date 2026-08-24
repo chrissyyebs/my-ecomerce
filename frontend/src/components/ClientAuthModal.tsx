@@ -78,7 +78,6 @@ export const ClientAuthModal: React.FC<ClientAuthModalProps> = ({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteWord, setDeleteWord] = useState('');
   const [deleteTypedWord, setDeleteTypedWord] = useState('');
-  const [deletePassword, setDeletePassword] = useState('');
   const [deleteError, setDeleteError] = useState('');
 
   // Password Requirement Rules for Sign Up
@@ -1188,7 +1187,6 @@ export const ClientAuthModal: React.FC<ClientAuthModalProps> = ({
                       const randomWord = words[Math.floor(Math.random() * words.length)];
                       setDeleteWord(randomWord);
                       setDeleteTypedWord('');
-                      setDeletePassword('');
                       setDeleteError('');
                       setShowDeleteConfirm(true);
                     }}
